@@ -1,0 +1,348 @@
+DISCLAIMER:
+AS PER ANY SCRIPT YOU IMPORT INTO YOUR SERVER, USE YOUR OWN BEST JUDGEMENT! SOME ITEMS ARE EASIER TO COPY
+AND REPLACE VS MERGE AND SOME ITEMS ARE EASIER TO MERGE VS COPY AND PASTE! JUST BECAUSE IT MIGHT BE EASIER
+TO COPY AND PASTE IT MAY NOT BE THE BEST CHOICE. BE SURE YOU HAVE A BASIC UNDERSTANDING OF WHAT YOU ARE DOING
+BEFORE YOU DO IT! IF YOU BREAK SOMETHING BY BLINDLY COPY AND PASTING WITHOUT CONSIDERING WHAT YOU ARE REMOVING
+THEN THAT IS ON YOU FOR NOT BEING DETAILED IN YOUR CODING! IF SOMETHING DOESN'T WORK RIGHT, BE SURE TO POST
+IN THE FORUMS SO YOU CAN RECEIVE HELP, OR CHECK THE THREADS AS YOUR QUESTION MAY ALREADY BE ANSWERED!
+
+This is the Old System For ServUO Server Build Before '  '.  You can use this with XML Attachments.
+This system may not receive additional features or updates, but will be maintained to an extent. 
+https://www.servuo.com/archive/level-system-3-rerelease.1088/
+
+Shout Outs Go out to all the wonderful people at ServUO.  Some direct mentions below, if I forgot
+you please let me know and I will add you to the credits.
+
+Lord Graywolf
+Vorspire
+Nockar [Link: [RunUO 2.0] Colored Item Name Properties]
+RoninGT [Link: Gearscore Script]
+Ki Frost
+
+Important Note!
+Most things in this system still have a toggle in the configuraiton.  
+Some Distro Edits WILL NOT have a toggle, so if you decide not to use
+something, keep this readme file handy so you know what changes to undo
+if you decide to turn something off. 
+
+Pet Level Orbs - For a GM to find the Orbs, just use the [bank command
+on the pets. 
+
+---------------------------------------------------------------------------
+Though the below edits are NOT required for this to compile they ARE required
+for certain features to function!
+
+Distro Edits
+11 Files that need edits. 
+PlayerMobile.cs, Titles.cs, SkillCheck.cs, BaseVendor.cs , ConfirmBankPointsGump.cs,
+BaseCreature.cs, BaseArmor.cs, BaseClothing.cs ,BaseWeapon.cs, BaseJewel.cs
+
+
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+Bugs and Support!
+
+Last Version of ServUO I tested this on: Version 0.5, Build 7514.41540
+Bugs Reported on Older versions of ServUO will not be reviewed. 
+Bugs Reported on Newer versions of ServUO will be reviewed. 
+
+Last Ultima Online Version I tested with all features woring: 7.0.83.37
+If using an older version of Ultima Online, cosmetic bugs will not be 
+reviewed.  If using newer version of Ultima Online, bugs will be reviewed.
+
+TLDR:
+Backwards compatibility is not guaranteed and the developer of the server
+needs to figure it out.
+
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------
+Command List
+---------------------------------------------------------------------------
+Player Commands:
+[level			-	Brings up the Player Level Window
+[ExpBar			-	Gives the Player an EXP Bar they can use
+
+
+Admin Commands:
+[levelcontrol			-	System Control Panel
+[GetAttExt				-	Brings up the command to check attachments on items. 
+[AvailAttExt			-	Shows all Attachments in the Level system.
+[AddAttExt				-	Add Attachment manually to item or mobile.
+[DelAttExt				-	Delete Attachment from item. 
+[ItemAttExt				-	List all attachments on items only. 
+[expaward				-	Gives Exp award based on number indicated in control panel. 
+[resetstat				-	Reset level stats and return used points to player.
+[exphour				-	Gives 1 hour of Exp boost.
+[levelup				- 	Gives player 1 level up boost and resets gained exp to zero.
+[bank					-	Default ServUo Command, when used on a pet it shows the Level orb.
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+Items:
+LevelSheet				-	Contains Players level info and opens level gump.
+PetLevelSheet			-	Access pets level Info
+PetOrb					-	Contains Pets level Info
+PetLockPicks			-	Players use these to steal pets. 
+ExpCoin					-	Allows player to get bonus EXP
+ExpPowerHourToken		-	Grants a player power hour time 
+LevelBag				-	Special Bag for Players 
+LevelGate				-	Level Requirement Gate
+LevelReqTile			-	Level requirement Tile
+PlayerSkillResetToken	-	Resets Players Skills and refunds points 
+RaiseMaxLevelScroll 	-	Raise Max level the toon can obtain 
+SetLevelToken 			-	Allows player to gain 1 level regardless of current exp
+SkillCoin 				-	Grants bonus skill points to player 
+StatPointReset			-	Resets stat points and refunds them
+BootsOfTravel			-	Allows player to Walk Fast 
+
+
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+
+ALL THE MODIFIED FILES BELOW NEED THIS ADDED TO THE SERVICE LIST AT THE TOP!!
+using Server.Engines.LevelSystemExtAtt;
+
+For the scripts ConfirmBankPointsGump.cs, need to add
+using Server.Items;
+
+
+---------------------------------------------------------------------------
+PlayerMobile.cs - Changes to Titles
+---------------------------------------------------------------------------
+
+		public override void GetProperties(ObjectPropertyList list)
+		{
+			base.GetProperties(list);
+
+			/* LevelSystemExt */
+			FeatureHandlerExt.PlayerMobileToonTitle(this, list);
+			/* LevelSystemExt */
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+Titles.cs
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+
+Locate a line called
+string customTitle = beheld.Title;
+Just below it comment out
+                if (beheld is PlayerMobile && ((PlayerMobile)beheld).PaperdollSkillTitle != null)
+                    title.Append(", ").Append(((PlayerMobile)beheld).PaperdollSkillTitle);
+                else if (beheld is BaseVendor)
+                    title.AppendFormat(" {0}", customTitle);
+					
+and replace it with the below. 
+
+			/* LevelSystemExt */
+			FeatureHandlerExt.PlayerMobileComputeTitle(beholder, beheld, title);
+			/* LevelSystemExt End */
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+SkillCheck.cs
+---------------------------------------------------------------------------
+DUE TO THE WAY THIS INTEGRATES INTO THE SKILL SYSTEM, A TOGGLE CANNOT EXIST!
+IF YOU WANT THIS DISABLED YOU NEED TO REVERT THE CODE. MAKE A BACKUP OF YOUR
+SKILLCHECK.CS BEFORE MAKING CHANGES!
+---------------------------------------------------------------------------
+/* This is required for the disable built in skill mechanics and EXP Gain from Skill Usage*/
+Only one edit needed.
+
+Add into the services section at top of script.
+using Server.Engines.LevelSystemExtAtt;
+
+Location the section: 
+
+                if (toGain == 1 && skill.Base <= 10.0)
+                    toGain = Utility.Random(4) + 1;
+					
+Under the 'if' statement add the following.
+				
+				/* LevelSystemExt */
+				LevelControlSysItem loccontrol = null;
+				foreach (Item lister in World.Items.Values)
+				{
+					if (lister is LevelControlSysItem) loccontrol = lister as LevelControlSysItem;
+				}
+				LevelControlSys m_ItemxmlSys = null;
+				m_ItemxmlSys = (LevelControlSys)XmlAttachExt.FindAttachment(loccontrol, typeof(LevelControlSys));	
+				if (m_ItemxmlSys != null && m_ItemxmlSys.PlayerLevels == true)
+				{
+					if (m_ItemxmlSys.DisableSkillGain == true && from is PlayerMobile)
+					{
+						LevelHandlerExt.DoGainSkillExp(from, skill);
+						return;
+					}
+					if (toGain != 0 && from is PlayerMobile)
+					{
+						LevelHandlerExt.DoGainSkillExp(from, skill);
+					}
+				}
+				/* LevelSystemExt */
+
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+BaseVendor.cs 
+---------------------------------------------------------------------------
+Add into the services section at top of script.
+using Server.Engines.LevelSystemExtAtt;
+
+Locate the below section
+
+		public void UpdateBuyInfo()
+		{
+		}
+		
+Merge the following into the seciton so it looks something like this.
+
+        public void UpdateBuyInfo()
+        {
+            int priceScalar = GetPriceScalar();
+
+			/* LevelSystemExt */
+			LevelControlSysItem loccontrol = null;
+			foreach (Item lister in World.Items.Values)
+			{
+				if (lister is LevelControlSysItem) loccontrol = lister as LevelControlSysItem;
+			}
+			LevelControlSys m_ItemxmlSys = null;
+			m_ItemxmlSys = (LevelControlSys)XmlAttachExt.FindAttachment(loccontrol, typeof(LevelControlSys));	
+			if (m_ItemxmlSys != null && m_ItemxmlSys.PlayerLevels == true)
+			{
+				if (m_ItemxmlSys.DiscountFromVendors == true)
+				{
+					var VendorDiscountsExt = FeatureHandlerExt.VendorDiscountsExt(this.GetType());
+					if (VendorDiscountsExt)
+					{
+						priceScalar = (int)(priceScalar * 0.6);
+					}
+				}
+			}
+			/* LevelSystemExt */
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+ConfirmBankPointsGump.cs
+---------------------------------------------------------------------------
+At the bottom of the section
+public ConfirmBankPointsGump
+
+Add in this
+
+			/* LevelSystemExt */
+			LevelHandlerExt.BodGainEXP(user, (int)points);
+			/* LevelSystemExt */
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+BaseCreature.cs
+
+THIS IS FOR THE CREATURE LEVEL DISPLAY
+---------------------------------------------------------------------------
+Find the method
+
+ public override string ApplyNameSuffix(string suffix)
+ 
+Put this below it, there shouldn't be a GetProperties in BaseCreature so copy and paste should be fine.
+ 
+ 
+		/* LevelSystemExt */
+        public override void GetProperties(ObjectPropertyList list)
+        {
+            base.GetProperties(list);
+			PetFeatureHandlerExt.PetLevelProps(this, list);
+        }
+		/* LevelSystemExt */
+		
+		
+		
+		
+---------------------------------------------
+-------NEXT SECTION IN BASECREATURE.CS-------
+---------------------------------------------
+		
+Locate:
+public virtual void OnGaveMeleeAttack(Mobile defender)
+
+At the beginning of the section add in the following:
+
+			/* LevelSystemExt Start */
+			Mobile attacker = this as Mobile;
+			if (Controlled)
+				PetFeatureHandlerExt.OnWeaponHit(attacker,defender);
+			/* LevelSystemExt End */
+
+			
+
+
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+BaseArmor.cs - BaseWeapon.cs BaseJewel.cs BaseClothing.cs - 
+Onequip edits and NameProp Edits - this is for the Required Level Equipment Section
+(If you do not want something included just do not put in the edits!)
+SAME CODE FOR ALL FOUR SCRIPTS! If for any reason the scripts do not have the
+required sections, create them.  
+---------------------------------------------------------------------------
+        public override bool CanEquip(Mobile from)
+        {
+			/* LevelSystemExt */
+			bool xmlequip = FeatureHandlerExt.CanEquipExt(from, this);
+			if (xmlequip == false)
+				return false;
+			/* LevelSystemExt End */
+				
+--------------------------
+-------NEXT SECTION-------
+--------------------------
+				
+        public override void AddNameProperties(ObjectPropertyList list)
+        {
+            base.AddNameProperties(list);
+			
+			/* LevelSystemExt Start */
+			FeatureHandlerExt.LevelAddNamePropsExt(this, list);		
+			/* LevelSystemExt Start */
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------
+!!!Script Notes!!!
+This is for those that want to link the toggles in with their own custom
+content.  
+---------------------------------------------------------------------------
+
+
+
+	This is used to integrate the checks into the control system
+	This checks for the item, finds the XML attachment and allows
+	Access into the public access checks. Considering binding VIA
+	serial instead of doing a world check.
+
+				/* Control System Check 
+				LevelControlSysItem loccontrol = null;
+				foreach (Item lister in World.Items.Values)
+				{
+					if (lister is LevelControlSysItem) loccontrol = lister as LevelControlSysItem;
+				}
+				LevelControlSys m_ItemxmlSys = null;
+				m_ItemxmlSys = (LevelControlSys)XmlAttachExt.FindAttachment(loccontrol, typeof(LevelControlSys));
+				if (m_ItemxmlSys == null)
+					return;
+				 Control System Check */
+				 
+				 
+				 
+				 
+				 Example:
+				 m_ItemxmlSys.PlayerLevels == true
+
+				 BankBox BankBoxVar = bc.FindBankNoCreate();
+				 
+				 

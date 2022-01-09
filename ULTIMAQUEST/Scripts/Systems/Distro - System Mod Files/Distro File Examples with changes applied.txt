@@ -1,0 +1,6 @@
+These are examples of the files with the changes applied.
+These may NOT be acceptable for merging depending on your servuo distro! 
+These are mainly for reference for you to add them yourself to the files. 
+
+The OLD DISTRO titles is for the overhaul and removal of the AOS and other
+features of servuo.  
